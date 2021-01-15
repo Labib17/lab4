@@ -2,7 +2,7 @@ package engine
 
 import "sync"
 
-type EventLoop struct {
+type eventLoop struct {
 	sync.Mutex
 
 	messageQueue []Command
@@ -13,7 +13,7 @@ type EventLoop struct {
 	finish    chan struct{}
 }
 
-func (loop *EventLoop) popCommand() Command {
+func (loop *eventLoop) popCommand() Command {
 	loop.Lock()
 	defer loop.Unlock()
 
@@ -31,7 +31,7 @@ func (loop *EventLoop) popCommand() Command {
 	return cmd
 }
 
-func (loop *EventLoop) run() {
+func (loop *eventLoop) run() {
 	for {
 		loop.popCommand().Execute(loop)
 		if len(loop.messageQueue) == 0 && loop.canFinish {
@@ -41,14 +41,14 @@ func (loop *EventLoop) run() {
 	loop.finish <- struct{}{}
 }
 
-func (loop *EventLoop) Start() {
+func (loop *eventLoop) Start() {
 	loop.receive = make(chan struct{})
 	loop.finish = make(chan struct{}, 1)
 
 	go loop.run()
 }
 
-func (loop *EventLoop) Post(command Command) {
+func (loop *eventLoop) Post(command Command) {
 	loop.Lock()
 	defer loop.Unlock()
 	loop.messageQueue = append(loop.messageQueue, command)
@@ -59,7 +59,7 @@ func (loop *EventLoop) Post(command Command) {
 	}
 }
 
-func (loop *EventLoop) AwaitFinish() {
+func (loop *eventLoop) AwaitFinish() {
 	loop.canFinish = true
 	<-loop.finish
 }
